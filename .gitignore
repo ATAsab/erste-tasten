@@ -1,0 +1,5 @@
+.DS_Store
+# Einstellungen für die lokale Vorschau
+.claude/
+# Original-MIDI-Dateien von Mutopia – die App nutzt die daraus erzeugte library-mutopia.js
+noten/

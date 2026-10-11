@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erste Tasten – Klavier von null</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,650;1,9..144,500&family=Instrument+Sans:wght@400;500;600&family=Noto+Music&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="spiel.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="toc" aria-label="Navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">𝄞</span>
+        <div><strong>Erste Tasten</strong><small>Klavier von null</small></div>
+      </div>
+      <a href="#/fortschritt" id="me-card" class="me-card" aria-label="Dein Fortschritt"></a>
+      <nav class="quick" aria-label="Schnellzugriff">
+        <a href="#/heute" class="quick-link today-link" data-section="heute">
+          <span class="quick-icon" aria-hidden="true">☀</span><b>Heute</b><small id="today-link-sub">Dein Plan</small>
+        </a>
+        <a href="#/jagd" class="quick-link hunt-link" data-section="jagd">
+          <span class="quick-icon" aria-hidden="true">🎯</span><b>Notenjagd</b><small id="hunt-link-best">Lesespiel</small>
+        </a>
+      </nav>
+      <nav class="tabs" aria-label="Bereiche">
+        <a href="#/ueben" data-section="ueben">Kurs</a>
+        <a href="#/stuecke" data-section="stuecke">Stücke</a>
+        <a href="#/theorie" data-section="theorie">Theorie</a>
+        <a href="#/geschichte" data-section="geschichte">Geschichte</a>
+      </nav>
+      <nav id="side-list" class="side-list" aria-label="Inhalt"></nav>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <span id="midi-status" class="chip">USB-Keyboard: suche …</span>
+        <details class="drop">
+          <summary id="mic-chip" class="chip">Mikrofon aus</summary>
+          <div class="panel">
+            <button id="mic-toggle" class="btn">Mikrofon einschalten</button>
+            <label for="mic-sens">Empfindlichkeit <small>(links = empfindlicher)</small></label>
+            <input id="mic-sens" type="range" min="0.002" max="0.06" step="0.002">
+            <meter id="mic-level" min="0" max="0.15" low="0.02" high="0.1"></meter>
+            <p>Erkannt: <b id="mic-note">–</b></p>
+            <p class="fine">Nur nötig ohne USB-Kabel. Das Mikrofon erkennt einzelne Töne zuverlässig, Akkorde nicht – bei beidhändigen Stellen reicht dann ein Ton. Stell die Empfindlichkeit so ein, dass bei Stille nichts erkannt wird.</p>
+          </div>
+        </details>
+        <details class="drop">
+          <summary id="timing-chip" class="chip">Feinjustierung</summary>
+          <div class="panel">
+            <label for="latency">Timing-Korrektur (Takt-Modus): <b id="latency-out"></b></label>
+            <input id="latency" type="range" min="-150" max="150" step="10">
+            <p class="fine">Bewertet dich die App ständig als „zu spät“, obwohl du genau auf den Klick spielst? Dann schieb den Regler nach rechts. Bei „zu früh“ nach links.</p>
+            <hr>
+            <label for="dyn-split">Grenze leise / laut: <b id="dyn-split-out"></b></label>
+            <input id="dyn-split" type="range" min="30" max="100" step="2">
+            <p>Dein letzter Anschlag: <b id="vel-live">–</b></p>
+            <p class="fine">Nur mit USB-Keyboard. Spiel einmal bewusst leise und einmal laut und stell die Grenze genau dazwischen.</p>
+          </div>
+        </details>
+      </header>
+
+      <div id="practice">
+        <section class="lesson" aria-labelledby="lesson-title">
+          <p class="eyebrow" id="lesson-eyebrow"></p>
+          <h1 id="lesson-title"></h1>
+          <details id="lesson-more" class="lesson-more" open>
+            <summary><span class="when-open">Erklärung ausblenden</span><span class="when-closed">Erklärung &amp; Aufgabe anzeigen</span></summary>
+            <div class="theory">
+              <div id="lesson-text" class="text"></div>
+              <aside class="task">
+                <h2>Deine Aufgabe</h2>
+                <p id="lesson-task"></p>
+              </aside>
+            </div>
+          </details>
+        </section>
+
+        <section class="stage" aria-label="Üben">
+          <header class="stage-head">
+            <p><span id="stage-number" class="eyebrow"></span> <b id="stage-title"></b></p>
+            <p class="fine"><kbd>Leertaste</kbd> Start · <kbd>R</kbd> von vorn · <kbd>?</kbd> alle Kürzel
+              <button id="fs-exit" class="btn ghost">✕ Vollbild beenden</button></p>
+          </header>
+          <div class="toolbar main">
+            <fieldset class="seg mode">
+              <legend class="sr-only">Modus</legend>
+              <label><input type="radio" name="mode" value="wait"><span>Schritt für Schritt</span></label>
+              <label><input type="radio" name="mode" value="takt"><span>Im Takt</span></label>
+            </fieldset>
+            <fieldset id="hands" class="seg hands" hidden>
+              <legend class="sr-only">Hände</legend>
+              <label title="Beide Hände (G)"><input type="radio" name="hands" value="both"><span>Beide</span></label>
+              <label title="Nur die rechte Hand – die App spielt die linke (G)"><input type="radio" name="hands" value="rh"><span>Rechts</span></label>
+              <label title="Nur die linke Hand – die App spielt die rechte (G)"><input type="radio" name="hands" value="lh"><span>Links</span></label>
+            </fieldset>
+            <div class="group">
+              <button id="takt-start" class="btn accent takt-only" title="Start / Stopp (Leertaste)">● Start</button>
+              <button id="play" class="btn ghost" title="Vorspielen (P)">▶ Vorspielen</button>
+              <button id="restart" class="btn ghost" title="Von vorn (R)">↺ Von vorn</button>
+            </div>
+            <button id="hot-btn" class="hot-btn" type="button" title="Die Takte mit den meisten Fehlern in Schleife üben" hidden></button>
+            <p class="count"><b id="counter"></b> <span id="errors"></span> <span id="round" class="round"></span> <span id="range-label" class="range-tag"></span></p>
+            <div id="vel-box" class="vel-box" hidden>
+              <span class="legend">Anschlag</span>
+              <meter id="vel-meter" min="0" max="127" value="0"></meter>
+              <b id="vel-value">–</b>
+            </div>
+            <button id="tune-btn" class="tune-btn" type="button" aria-expanded="false" aria-controls="tune" title="Ansicht, Hilfen, Tempo, Wiederholen, Aufnahme">
+              <span class="tune-icon" aria-hidden="true">⚙</span><span>Anpassen</span><small id="tune-summary"></small>
+            </button>
+            <div class="group tools">
+              <button id="keys-btn" class="btn ghost small icon" title="Tastenkürzel anzeigen (?)" aria-label="Tastenkürzel">?</button>
+              <button id="fullscreen" class="btn ghost small icon" title="Vollbild (F)" aria-label="Vollbild">⛶</button>
+            </div>
+          </div>
+
+          <div id="tune" class="tune" hidden>
+            <fieldset class="seg">
+              <legend>Ansicht</legend>
+              <label><input type="radio" name="view" value="notes"><span>Noten</span></label>
+              <label><input type="radio" name="view" value="both"><span>Beides</span></label>
+              <label><input type="radio" name="view" value="fall"><span>Fallend</span></label>
+            </fieldset>
+            <fieldset class="helps">
+              <legend>Hilfen</legend>
+              <label><input type="checkbox" data-help="names"><span>Notennamen</span></label>
+              <label><input type="checkbox" data-help="fingers"><span>Finger</span></label>
+              <label><input type="checkbox" data-help="keys"><span>Tasten leuchten</span></label>
+              <label><input type="checkbox" data-help="keyNames"><span>Tastennamen</span></label>
+            </fieldset>
+            <div class="tune-group takt-only">
+              <label for="tempo" class="legend">Tempo</label>
+              <div class="takt-opts">
+                <input id="tempo" type="range" min="0.5" max="1.2" step="0.1">
+                <output id="tempo-out" for="tempo"></output>
+                <fieldset class="helps">
+                  <legend class="sr-only">Metronom</legend>
+                  <label><input type="checkbox" id="metronome"><span>Metronom</span></label>
+                </fieldset>
+              </div>
+            </div>
+            <div class="tune-group">
+              <span class="legend">Wiederholen</span>
+              <div class="tune-row">
+                <fieldset class="seg">
+                  <legend class="sr-only">Wiederholen</legend>
+                  <label><input type="radio" name="loop" value="off"><span>Aus</span></label>
+                  <label><input type="radio" name="loop" value="3"><span>3×</span></label>
+                  <label><input type="radio" name="loop" value="5"><span>5×</span></label>
+                  <label><input type="radio" name="loop" value="inf"><span>∞</span></label>
+                </fieldset>
+                <fieldset class="helps takt-only">
+                  <legend class="sr-only">Tempo steigern</legend>
+                  <label title="Nach jeder Runde mit mindestens 90 % im Takt wird es 10 % schneller – bis zum Originaltempo"><input type="checkbox" id="loop-faster"><span>Tempo steigern</span></label>
+                </fieldset>
+              </div>
+              <div class="range-field">
+                <span>Takte</span>
+                <input id="range-from" type="number" min="1" value="1" aria-label="Von Takt">
+                <span aria-hidden="true">bis</span>
+                <input id="range-to" type="number" min="1" value="1" aria-label="Bis Takt">
+                <button id="range-reset" class="link-btn" type="button">ganzes Stück</button>
+              </div>
+            </div>
+            <div id="accompany-group" class="tune-group" hidden>
+              <span class="legend">Hände getrennt</span>
+              <label class="via"><input type="checkbox" id="accompany"> Andere Hand von der App mitspielen lassen</label>
+              <small class="fine">Mit Mikrofon spielt die App nicht mit – sie würde sich sonst selbst hören.</small>
+            </div>
+            <div class="tune-group">
+              <span class="legend">Aufnahme</span>
+              <div class="group rec">
+                <button id="rec-btn" class="btn ghost" title="Aufnehmen (A)">● Aufnehmen</button>
+                <button id="rec-play" class="btn ghost" title="Meine Aufnahme anhören (W)" disabled>▶ Meine Aufnahme</button>
+                <button id="rec-report-btn" class="btn ghost" title="Aufnahme mit den Noten vergleichen" disabled>📊 Auswertung</button>
+                <label id="rec-via-label" class="via" hidden><input type="checkbox" id="rec-via"> übers Keyboard abspielen</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="sheet">
+            <div id="prompt" class="prompt" aria-live="polite"></div>
+            <div id="staff" class="staff"></div>
+          </div>
+          <div id="countin" class="countin" aria-live="assertive" hidden></div>
+          <div class="piano">
+            <canvas id="fall" aria-hidden="true"></canvas>
+            <div id="keyboard" class="keyboard"></div>
+          </div>
+          <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+        </section>
+      </div>
+
+      <div id="reader" class="reader" hidden></div>
+      <div id="library" class="library" hidden></div>
+      <div id="dashboard" class="dashboard" hidden></div>
+      <div id="hunt" class="hunt" hidden></div>
+      <div id="today" class="today" hidden></div>
+    </main>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <dialog id="result" aria-labelledby="result-title">
+    <form method="dialog">
+      <p class="eyebrow" id="result-eyebrow"></p>
+      <h2 id="result-title"></h2>
+      <div id="stars" class="stars" role="img"></div>
+      <ul id="result-stats" class="stats"></ul>
+      <p id="result-tip" class="tip"></p>
+      <div class="actions">
+        <button value="again" class="btn ghost">Nochmal</button>
+        <button value="" id="mid-btn" class="btn ghost"></button>
+        <button value="hotspot" id="hot-result" class="btn ghost hot" hidden></button>
+        <button value="next" id="next-btn" class="btn">Nächste Lektion →</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="rec-report" class="report" aria-labelledby="rec-report-title">
+    <form method="dialog">
+      <p class="eyebrow">Auswertung deiner Aufnahme</p>
+      <h2 id="rec-report-title"></h2>
+      <p id="rec-report-part" class="fine"></p>
+      <div id="rec-report-body"></div>
+      <p class="fine">Am aussagekräftigsten, wenn du frei oder „Im Takt“ spielst – „Schritt für Schritt“ hat kein festes Tempo.</p>
+      <div class="actions">
+        <button value="listen" class="btn ghost">▶ Anhören</button>
+        <button value="spot" id="rec-report-spot" class="btn ghost hot" hidden></button>
+        <button value="" class="btn">Schließen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="keys" aria-labelledby="keys-title">
+    <form method="dialog">
+      <p class="eyebrow">Computertastatur</p>
+      <h2 id="keys-title">Tastenkürzel</h2>
+      <p class="fine">Funktionieren auf der Übungsseite – dein Klavier spielst du ganz normal weiter.</p>
+      <dl id="keys-list" class="keys"></dl>
+      <div class="actions"><button class="btn">Alles klar</button></div>
+    </form>
+  </dialog>
+
+  <script src="music.js"></script>
+  <script src="stats.js"></script>
+  <script src="staff.js"></script>
+  <script src="lessons.js"></script>
+  <script src="theory.js"></script>
+  <script src="history.js"></script>
+  <script src="quiz.js"></script>
+  <script src="library.js"></script>
+  <script src="library-mutopia.js"></script>
+  <script src="technik.js"></script>
+  <script src="midi.js"></script>
+  <script src="reader.js"></script>
+  <script src="keyboard.js"></script>
+  <script src="takt.js"></script>
+  <script src="recorder.js"></script>
+  <script src="library-view.js"></script>
+  <script src="loop.js"></script>
+  <script src="fehlerstellen.js"></script>
+  <script src="hands.js"></script>
+  <script src="anpassen.js"></script>
+  <script src="auswertung.js"></script>
+  <script src="hunt.js"></script>
+  <script src="heute.js"></script>
+  <script src="backup.js"></script>
+  <script src="fortschritt.js"></script>
+  <script src="shortcuts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
