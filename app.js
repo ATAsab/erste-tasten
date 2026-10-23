@@ -630,7 +630,7 @@ async function toggleMic() {
 const MIC_SETTLE_FRAMES = 3; // ≈ 50 ms gleiche Tonhöhe – der Anschlag selbst klingt kurz unsauber
 const MIC_FLOOR_FACTOR = 3; // Ton muss so viel lauter sein als das gemessene Raumrauschen
 
-// Erkennt einen neuen Anschlag: stabile Tonhöhe über 3 Frames UND (neuer Ton ODER Lautstärke springt hoch).
+// Erkennt einen neuen Anschlag: stabile Tonhöhe über 3 Frames UND Lautstärke springt hoch.
 function micLoop() {
   mic.raf = requestAnimationFrame(micLoop);
   const { analyser, buf } = mic;
@@ -646,16 +646,16 @@ function micLoop() {
     Object.assign(mic, { held: null, cand: null, low: level });
     return;
   }
-  const attack = level > mic.low * 2.5 && now - mic.last > 120;
   mic.low = Math.min(mic.low, level);
   const freq = yin(buf, analyser.context.sampleRate);
   if (!freq) return;
   const midi = freqToMidi(freq);
   mic.count = midi === mic.cand ? mic.count + 1 : 1;
   mic.cand = midi;
-  $("#mic-note").textContent = midiName(midi);
-  if (mic.count < MIC_SETTLE_FRAMES || (midi === mic.held && !attack)) return;
+  if (mic.count < MIC_SETTLE_FRAMES) return;
+  if (!isMicOnset({ midi, held: mic.held, level, low: mic.low, sinceLastMs: now - mic.last })) return;
   Object.assign(mic, { held: midi, low: level, last: now });
+  $("#mic-note").textContent = midiName(midi); // nur gezählte Töne – Zwischenwerte beim Verklingen verwirren
   recordNote(midi, null, now, TAP_MS);
   handleNote(midi, "mic", now);
 }

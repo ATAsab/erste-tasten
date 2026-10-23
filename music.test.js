@@ -65,6 +65,12 @@ for (const midi of [48, 55, 60, 64, 69, 84]) {
   assert.equal(m.freqToMidi(m.yin(buf, SR)), midi, `YIN erkennt ${m.midiName(midi)}`);
 }
 assert.equal(m.yin(new Float32Array(2048), SR), 0); // Stille
+// Mikrofon-Anschlag: ausklingender Ton mit wandernder Tonhöhe zählt nicht, echter Anschlag schon
+assert.equal(m.isMicOnset({ midi: 67, held: 60, level: 0.05, low: 0.045, sinceLastMs: 400 }), false, "Verklingen ≠ neuer Ton");
+assert.equal(m.isMicOnset({ midi: 67, held: 60, level: 0.08, low: 0.04, sinceLastMs: 400 }), true, "anderer Ton mit Anschlag");
+assert.equal(m.isMicOnset({ midi: 60, held: 60, level: 0.08, low: 0.04, sinceLastMs: 400 }), false, "gleicher Ton braucht stärkeren Sprung");
+assert.equal(m.isMicOnset({ midi: 60, held: 60, level: 0.12, low: 0.04, sinceLastMs: 400 }), true, "gleicher Ton nochmal angeschlagen");
+assert.equal(m.isMicOnset({ midi: 67, held: 60, level: 0.2, low: 0.01, sinceLastMs: 80 }), false, "zu kurz nach dem letzten Ton");
 
 // Sterne (Schritt für Schritt)
 assert.equal(m.scoreRun(10, 0, false).stars, 3);

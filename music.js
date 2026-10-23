@@ -177,6 +177,14 @@ function yin(buf, sampleRate, threshold = 0.15) {
   return sampleRate / (tau + (curve ? (a - c) / (2 * curve) : 0));
 }
 
+// Mikrofon: zählt ein Ton als neuer Anschlag? Ohne Lautstärkesprung nie – sonst meldet der ausklingende
+// Ton (Nachhall, Pedal, Lautsprecher) falsche Töne, weil seine Tonhöhe beim Verklingen wandert.
+// Ein anderer Ton braucht einen kleineren Sprung (legato klingt der alte noch) als derselbe Ton nochmal.
+function isMicOnset({ midi, held, level, low, sinceLastMs }) {
+  if (sinceLastMs < 120) return false;
+  return level > low * (midi === held ? 2.5 : 1.6);
+}
+
 // 1 Stern fürs Schaffen, +1 für ≥ 90 % Treffer, +1 wenn ohne Hilfen gespielt.
 function scoreRun(stepCount, errors, usedHelp) {
   const accuracy = stepCount / (stepCount + errors);
@@ -224,6 +232,6 @@ if (typeof module !== "undefined") {
   module.exports = {
     DURATIONS, DYNAMICS, DYN_LEVEL, TIMING, FLAT_NAME_OF, parseNote, octaveOf, pitchName, midiName, isBlack, meterBeats, staffStep,
     parseVoice, parseRests, restsOf, parseChordSymbols, voiceLength, groupSteps, buildSteps, stepsFromNotes, drillSteps, endBeat,
-    midiToFreq, freqToMidi, rms, yin, scoreRun, dynamicFits, judgeHit, rateOffset, rhythmScore,
+    midiToFreq, freqToMidi, rms, yin, isMicOnset, scoreRun, dynamicFits, judgeHit, rateOffset, rhythmScore,
   };
 }
