@@ -618,7 +618,7 @@ async function toggleMic() {
     const highpass = new BiquadFilterNode(ctx, { type: "highpass", frequency: 50 });
     const lowpass = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 2200 });
     ctx.createMediaStreamSource(stream).connect(highpass).connect(lowpass).connect(analyser);
-    mic = { stream, analyser, buf: new Float32Array(analyser.fftSize), held: null, cand: null, count: 0, low: 1, last: 0, floor: 0 };
+    mic = { stream, analyser, buf: new Float32Array(analyser.fftSize), held: null, cand: null, count: 0, low: 1, last: 0 };
     micLoop();
   } catch (err) {
     console.warn("Mikrofon nicht verfügbar", err);
@@ -627,10 +627,8 @@ async function toggleMic() {
   updateMicUi();
 }
 
-const MIC_SETTLE_FRAMES = 3; // ≈ 50 ms gleiche Tonhöhe – der Anschlag selbst klingt kurz unsauber
-const MIC_FLOOR_FACTOR = 3; // Ton muss so viel lauter sein als das gemessene Raumrauschen
-
-// Erkennt einen neuen Anschlag: stabile Tonhöhe über 3 Frames UND Lautstärke springt hoch.
+// Erkennt einen neuen Anschlag: stabile Tonhöhe über 2 Frames UND (neuer Ton ODER Lautstärke springt hoch).
+// ponytail: kein Lautstärkesprung für einen neuen Ton nötig – legato wird der neue Ton nicht lauter als der alte.
 function micLoop() {
   mic.raf = requestAnimationFrame(micLoop);
   const { analyser, buf } = mic;
@@ -638,22 +636,19 @@ function micLoop() {
   const level = rms(buf);
   const now = performance.now();
   $("#mic-level").value = level;
-  // Der Regler ist die Untergrenze; in lauten Räumen hebt das gemessene Grundrauschen die Schwelle von selbst an.
   // Das Metronom im Takt-Modus ist leise und hoch genug, um unter der Schwelle zu bleiben – sonst Regler anpassen.
-  const gate = Math.max(settings.micSens, mic.floor * MIC_FLOOR_FACTOR);
-  if (level < gate || playback || clip || recPlay || now < quietUntil) {
-    if (level < gate) mic.floor += (level - mic.floor) * 0.05;
+  if (level < settings.micSens || playback || clip || recPlay || now < quietUntil) {
     Object.assign(mic, { held: null, cand: null, low: level });
     return;
   }
+  const attack = level > mic.low * 2.5 && now - mic.last > 120;
   mic.low = Math.min(mic.low, level);
   const freq = yin(buf, analyser.context.sampleRate);
   if (!freq) return;
   const midi = freqToMidi(freq);
   mic.count = midi === mic.cand ? mic.count + 1 : 1;
   mic.cand = midi;
-  if (mic.count < MIC_SETTLE_FRAMES) return;
-  if (!isMicOnset({ midi, held: mic.held, level, low: mic.low, sinceLastMs: now - mic.last })) return;
+  if (mic.count < 2 || (midi === mic.held && !attack)) return;
   Object.assign(mic, { held: midi, low: level, last: now });
   $("#mic-note").textContent = midiName(midi); // nur gezählte Töne – Zwischenwerte beim Verklingen verwirren
   recordNote(midi, null, now, TAP_MS);
